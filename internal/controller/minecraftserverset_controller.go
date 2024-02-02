@@ -55,7 +55,7 @@ func (r *MinecraftServerSetReconciler) Reconcile(ctx context.Context, req ctrl.R
 
 	var minecraftServerSet streladevv1.MinecraftServerSet
 	if err := r.Get(ctx, req.NamespacedName, &minecraftServerSet); err != nil {
-		log.Error(err, "unable to fetch MinecraftServer")
+		log.Error(err, "unable to fetch MinecraftServerSet")
 		// we'll ignore not-found errors, since they can't be fixed by an immediate
 		// requeue (we'll need to wait for a new notification), and we can get them
 		// on deleted requests.

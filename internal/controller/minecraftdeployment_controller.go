@@ -47,8 +47,17 @@ type MinecraftDeploymentReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.17.0/pkg/reconcile
 func (r *MinecraftDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+	log := log.FromContext(ctx)
+	log.Info("Reconcile of ", "name", req.NamespacedName.String())
 
+	var minecraftServer streladevv1.MinecraftServer
+	if err := r.Get(ctx, req.NamespacedName, &minecraftServer); err != nil {
+		log.Error(err, "unable to fetch MinecraftServer")
+		// we'll ignore not-found errors, since they can't be fixed by an immediate
+		// requeue (we'll need to wait for a new notification), and we can get them
+		// on deleted requests.
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
 	// TODO(user): your logic here
 
 	return ctrl.Result{}, nil
