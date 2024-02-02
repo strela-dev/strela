@@ -53,8 +53,7 @@ type MinecraftServerReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.17.0/pkg/reconcile
 func (r *MinecraftServerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := log.FromContext(ctx)
-
-	log.Info("reconcile of ", "name", req.NamespacedName.String())
+	log.Info("Reconcile of ", "name", req.NamespacedName.String())
 
 	var minecraftServer streladevv1.MinecraftServer
 	if err := r.Get(ctx, req.NamespacedName, &minecraftServer); err != nil {
