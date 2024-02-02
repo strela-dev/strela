@@ -47,8 +47,8 @@ type MinecraftServerSet struct {
 
 // MinecraftServerSetStatus defines the observed state of MinecraftServerSet
 type MinecraftServerSetStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	Replicas int `json:"replicas"`
+	Ready    int `json:"ready"`
 }
 
 //+kubebuilder:object:root=true

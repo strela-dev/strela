@@ -18,6 +18,10 @@ package controller
 
 import (
 	"context"
+	"fmt"
+	"hash/fnv"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"strconv"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -47,25 +51,105 @@ type MinecraftDeploymentReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.17.0/pkg/reconcile
 func (r *MinecraftDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
-	log.Info("Reconcile of ", "name", req.NamespacedName.String())
+	logger := log.FromContext(ctx)
 
-	var minecraftServer streladevv1.MinecraftServer
-	if err := r.Get(ctx, req.NamespacedName, &minecraftServer); err != nil {
-		log.Error(err, "unable to fetch MinecraftServer")
-		// we'll ignore not-found errors, since they can't be fixed by an immediate
-		// requeue (we'll need to wait for a new notification), and we can get them
-		// on deleted requests.
+	// Fetch the MinecraftDeployment instance
+	var deployment streladevv1.MinecraftDeployment
+	if err := r.Get(ctx, req.NamespacedName, &deployment); err != nil {
+		logger.Error(err, "unable to fetch MinecraftDeployment")
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
-	// TODO(user): your logic here
+
+	// Generate hash for the PodTemplateSpec
+	podTemplateHash, err := generatePodTemplateSpecHash(deployment.Spec.Template)
+	if err != nil {
+		logger.Error(err, "failed to generate PodTemplateSpec hash")
+		return ctrl.Result{}, err
+	}
+	hashedName := fmt.Sprintf("%s-%s", deployment.Name, podTemplateHash[:10])
+
+	// List all MinecraftServerSets owned by this MinecraftDeployment
+	var serverSets streladevv1.MinecraftServerSetList
+	if err := r.List(ctx, &serverSets, client.InNamespace(deployment.Namespace), client.MatchingFields{"metadata.name": hashedName}); err != nil {
+		logger.Error(err, "unable to list child MinecraftServerSets")
+		return ctrl.Result{}, err
+	}
+
+	// Determine the current ServerSet and outdated ServerSets
+	var currentServerSet *streladevv1.MinecraftServerSet
+	outdatedServerSets := make([]streladevv1.MinecraftServerSet, 0)
+	for i, ss := range serverSets.Items {
+		if ss.Name == hashedName {
+			currentServerSet = &serverSets.Items[i]
+		} else {
+			outdatedServerSets = append(outdatedServerSets, ss)
+		}
+	}
+
+	// Update replicas for outdated ServerSets to 0 and delete if necessary
+	for _, ss := range outdatedServerSets {
+		if ss.Spec.Replicas != 0 {
+			ss.Spec.Replicas = 0
+			if err := r.Update(ctx, &ss); err != nil {
+				logger.Error(err, "failed to update outdated MinecraftServerSet replicas to 0", "MinecraftServerSet", ss.Name)
+				return ctrl.Result{}, err
+			}
+		}
+
+		// Delete ServerSet if it has no active servers
+		if ss.Status.Replicas == 0 {
+			if err := r.Delete(ctx, &ss); err != nil {
+				logger.Error(err, "failed to delete outdated MinecraftServerSet", "MinecraftServerSet", ss.Name)
+				return ctrl.Result{}, err
+			}
+		}
+	}
+
+	// If there is no current ServerSet, create one
+	if currentServerSet == nil {
+		newServerSet := &streladevv1.MinecraftServerSet{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      hashedName,
+				Namespace: deployment.Namespace,
+				OwnerReferences: []metav1.OwnerReference{
+					*metav1.NewControllerRef(&deployment, streladevv1.GroupVersion.WithKind("MinecraftDeployment")),
+				},
+			},
+			Spec: streladevv1.MinecraftServerSetSpec{
+				Replicas: deployment.Spec.Replicas,
+				Template: deployment.Spec.Template,
+			},
+		}
+		if err := r.Create(ctx, newServerSet); err != nil {
+			logger.Error(err, "failed to create MinecraftServerSet", "MinecraftServerSet", newServerSet.Name)
+			return ctrl.Result{}, err
+		}
+		return ctrl.Result{Requeue: true}, nil
+	}
+
+	// Update the MinecraftDeployment status
+	deployment.Status.Replicas = currentServerSet.Status.Replicas
+	deployment.Status.Ready = currentServerSet.Status.Ready
+	if err := r.Status().Update(ctx, &deployment); err != nil {
+		logger.Error(err, "failed to update MinecraftDeployment status")
+		return ctrl.Result{}, err
+	}
 
 	return ctrl.Result{}, nil
+}
+
+func generatePodTemplateSpecHash(template streladevv1.MinecraftServerTemplateSpec) (string, error) {
+	hasher := fnv.New32a()
+	if _, err := hasher.Write([]byte(fmt.Sprintf("%+v", template))); err != nil {
+		return "", err
+	}
+	return strconv.FormatUint(uint64(hasher.Sum32()), 16), nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *MinecraftDeploymentReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&streladevv1.MinecraftDeployment{}).
+		Owns(&streladevv1.MinecraftServerSet{}).
 		Complete(r)
 }

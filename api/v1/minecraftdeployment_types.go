@@ -17,7 +17,6 @@ limitations under the License.
 package v1
 
 import (
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -47,7 +46,7 @@ type MinecraftDeploymentSpec struct {
 	Type          MinecraftDeploymentType       `json:"type"`
 	Static        MinecraftDeploymentStaticSpec `json:"static"`
 	LobbyPriority int                           `json:"lobbyPriority"`
-	Template      corev1.PodTemplateSpec        `json:"template"`
+	Template      MinecraftServerTemplateSpec   `json:"template"`
 }
 
 // MinecraftDeploymentStatus defines the observed state of MinecraftDeployment

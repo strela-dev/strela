@@ -154,5 +154,6 @@ func (r *MinecraftServerSetReconciler) SetupWithManager(mgr ctrl.Manager) error 
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&streladevv1.MinecraftServerSet{}).
+		Owns(&streladevv1.MinecraftServer{}).
 		Complete(r)
 }

@@ -7737,6 +7737,14 @@ spec:
             type: object
           status:
             description: MinecraftServerSetStatus defines the observed state of MinecraftServerSet
+            properties:
+              ready:
+                type: integer
+              replicas:
+                type: integer
+            required:
+            - ready
+            - replicas
             type: object
         type: object
     served: true
