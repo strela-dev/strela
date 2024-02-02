@@ -29,9 +29,12 @@ type MinecraftServerSetSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// Foo is an example field of MinecraftServerSet. Edit minecraftserverset_types.go to remove/update
-	Replicas int                         `json:"replicas"`
+	Replicas int                         `json:"replicas,omitempty"`
 	Template MinecraftServerTemplateSpec `json:"template"`
 }
+
+//+kubebuilder:object:root=true
+//+kubebuilder:subresource:status
 
 // MinecraftServerSet is the Schema for the minecraftserversets API
 type MinecraftServerSet struct {
@@ -42,13 +45,10 @@ type MinecraftServerSet struct {
 	Status MinecraftServerSetStatus `json:"status,omitempty"`
 }
 
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
-
 // MinecraftServerSetStatus defines the observed state of MinecraftServerSet
 type MinecraftServerSetStatus struct {
-	Replicas int `json:"replicas"`
-	Ready    int `json:"ready"`
+	Replicas int `json:"replicas,omitempty"`
+	Ready    int `json:"ready,omitempty"`
 }
 
 //+kubebuilder:object:root=true

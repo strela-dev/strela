@@ -33,6 +33,32 @@ rules:
 - apiGroups:
   - strela.dev
   resources:
+  - minecraftserverautoscalers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - strela.dev
+  resources:
+  - minecraftserverautoscalers/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - strela.dev
+  resources:
+  - minecraftserverautoscalers/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - strela.dev
+  resources:
   - minecraftservers
   verbs:
   - create

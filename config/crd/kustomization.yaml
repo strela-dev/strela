@@ -6,6 +6,7 @@ resources:
 - bases/strela.dev_minecraftdeployments.yaml
 - bases/strela.dev_minecraftserversets.yaml
 - bases/strela.dev_minecraftstatefulsets.yaml
+- bases/strela.dev_minecraftserverautoscalers.yaml
 #+kubebuilder:scaffold:crdkustomizeresource
 
 patches:
@@ -15,6 +16,7 @@ patches:
 #- path: patches/webhook_in_minecraftdeployments.yaml
 #- path: patches/webhook_in_minecraftserversets.yaml
 #- path: patches/webhook_in_minecraftstatefulsets.yaml
+#- path: patches/webhook_in_minecraftserverautoscalers.yaml
 #+kubebuilder:scaffold:crdkustomizewebhookpatch
 
 # [CERTMANAGER] To enable cert-manager, uncomment all the sections with [CERTMANAGER] prefix.
@@ -23,6 +25,7 @@ patches:
 #- path: patches/cainjection_in_minecraftdeployments.yaml
 #- path: patches/cainjection_in_minecraftserversets.yaml
 #- path: patches/cainjection_in_minecraftstatefulsets.yaml
+#- path: patches/cainjection_in_minecraftserverautoscalers.yaml
 #+kubebuilder:scaffold:crdkustomizecainjectionpatch
 
 # [WEBHOOK] To enable webhook, uncomment the following section

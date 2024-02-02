@@ -32,8 +32,8 @@ const (
 )
 
 type MinecraftDeploymentStaticSpec struct {
-	Enabled         bool   `json:"enabled"`
-	StorageCapacity string `json:"storageCapacity"`
+	Enabled         bool   `json:"enabled,omitempty"`
+	StorageCapacity string `json:"storageCapacity,omitempty"`
 }
 
 // MinecraftDeploymentSpec defines the desired state of MinecraftDeployment
@@ -42,17 +42,17 @@ type MinecraftDeploymentSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// Foo is an example field of MinecraftDeployment. Edit minecraftdeployment_types.go to remove/update
-	Replicas      int                           `json:"replicas"`
-	Type          MinecraftDeploymentType       `json:"type"`
-	Static        MinecraftDeploymentStaticSpec `json:"static"`
-	LobbyPriority int                           `json:"lobbyPriority"`
-	Template      MinecraftServerTemplateSpec   `json:"template"`
+	Replicas      int                           `json:"replicas,omitempty"`
+	Type          MinecraftDeploymentType       `json:"type,omitempty"`
+	Static        MinecraftDeploymentStaticSpec `json:"static,omitempty"`
+	LobbyPriority int                           `json:"lobbyPriority,omitempty"`
+	Template      MinecraftServerTemplateSpec   `json:"template,omitempty"`
 }
 
 // MinecraftDeploymentStatus defines the observed state of MinecraftDeployment
 type MinecraftDeploymentStatus struct {
-	Replicas int `json:"replicas"`
-	Ready    int `json:"ready"`
+	Replicas int `json:"replicas,omitempty"`
+	Ready    int `json:"ready,omitempty"`
 }
 
 //+kubebuilder:object:root=true

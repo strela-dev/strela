@@ -4,4 +4,5 @@ resources:
 - _v1_minecraftdeployment.yaml
 - _v1_minecraftserverset.yaml
 - _v1_minecraftstatefulset.yaml
+- _v1_minecraftserverautoscaler.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples

@@ -1,0 +1,12 @@
+apiVersion: strela.dev/v1
+kind: MinecraftServerAutoscaler
+metadata:
+  labels:
+    app.kubernetes.io/name: minecraftserverautoscaler
+    app.kubernetes.io/instance: minecraftserverautoscaler-sample
+    app.kubernetes.io/part-of: strela
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: strela
+  name: minecraftserverautoscaler-sample
+spec:
+  # TODO(user): Add fields here
