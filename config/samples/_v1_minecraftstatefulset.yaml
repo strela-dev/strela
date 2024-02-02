@@ -1,0 +1,12 @@
+apiVersion: strela.dev/v1
+kind: MinecraftStatefulSet
+metadata:
+  labels:
+    app.kubernetes.io/name: minecraftstatefulset
+    app.kubernetes.io/instance: minecraftstatefulset-sample
+    app.kubernetes.io/part-of: strela
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: strela
+  name: minecraftstatefulset-sample
+spec:
+  # TODO(user): Add fields here

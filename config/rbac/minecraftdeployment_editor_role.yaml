@@ -1,0 +1,31 @@
+# permissions for end users to edit minecraftdeployments.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: minecraftdeployment-editor-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: strela
+    app.kubernetes.io/part-of: strela
+    app.kubernetes.io/managed-by: kustomize
+  name: minecraftdeployment-editor-role
+rules:
+- apiGroups:
+  - strela.dev
+  resources:
+  - minecraftdeployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - strela.dev
+  resources:
+  - minecraftdeployments/status
+  verbs:
+  - get

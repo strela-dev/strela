@@ -1,0 +1,12 @@
+apiVersion: strela.dev/v1
+kind: MinecraftDeployment
+metadata:
+  labels:
+    app.kubernetes.io/name: minecraftdeployment
+    app.kubernetes.io/instance: minecraftdeployment-sample
+    app.kubernetes.io/part-of: strela
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/created-by: strela
+  name: minecraftdeployment-sample
+spec:
+  # TODO(user): Add fields here

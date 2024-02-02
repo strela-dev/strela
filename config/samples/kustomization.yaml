@@ -1,0 +1,7 @@
+## Append samples of your project ##
+resources:
+- _v1_minecraftserver.yaml
+- _v1_minecraftdeployment.yaml
+- _v1_minecraftserverset.yaml
+- _v1_minecraftstatefulset.yaml
+#+kubebuilder:scaffold:manifestskustomizesamples

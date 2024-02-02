@@ -1,0 +1,31 @@
+# permissions for end users to edit minecraftstatefulsets.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: minecraftstatefulset-editor-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: strela
+    app.kubernetes.io/part-of: strela
+    app.kubernetes.io/managed-by: kustomize
+  name: minecraftstatefulset-editor-role
+rules:
+- apiGroups:
+  - strela.dev
+  resources:
+  - minecraftstatefulsets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - strela.dev
+  resources:
+  - minecraftstatefulsets/status
+  verbs:
+  - get
