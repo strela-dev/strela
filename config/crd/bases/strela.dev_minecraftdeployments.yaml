@@ -40,9 +40,25 @@ spec:
           spec:
             description: MinecraftDeploymentSpec defines the desired state of MinecraftDeployment
             properties:
-              template:
+              lobbyPriority:
+                type: integer
+              replicas:
                 description: Foo is an example field of MinecraftDeployment. Edit
                   minecraftdeployment_types.go to remove/update
+                type: integer
+              static:
+                properties:
+                  enabled:
+                    type: boolean
+                  storageCapacity:
+                    type: string
+                required:
+                - enabled
+                - storageCapacity
+                type: object
+              template:
+                description: PodTemplateSpec describes the data a pod should have
+                  when created from a template
                 properties:
                   metadata:
                     description: |-
@@ -7519,11 +7535,25 @@ spec:
                     - containers
                     type: object
                 type: object
+              type:
+                type: string
             required:
+            - lobbyPriority
+            - replicas
+            - static
             - template
+            - type
             type: object
           status:
             description: MinecraftDeploymentStatus defines the observed state of MinecraftDeployment
+            properties:
+              ready:
+                type: integer
+              replicas:
+                type: integer
+            required:
+            - ready
+            - replicas
             type: object
         type: object
     served: true

@@ -24,19 +24,36 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
+type MinecraftDeploymentType string
+
+const (
+	Proxy  MinecraftDeploymentType = "PROXY"
+	Lobby  MinecraftDeploymentType = "LOBBY"
+	Server MinecraftDeploymentType = "SERVER"
+)
+
+type MinecraftDeploymentStaticSpec struct {
+	Enabled         bool   `json:"enabled"`
+	StorageCapacity string `json:"storageCapacity"`
+}
+
 // MinecraftDeploymentSpec defines the desired state of MinecraftDeployment
 type MinecraftDeploymentSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// Foo is an example field of MinecraftDeployment. Edit minecraftdeployment_types.go to remove/update
-	Template corev1.PodTemplateSpec `json:"template"`
+	Replicas      int                           `json:"replicas"`
+	Type          MinecraftDeploymentType       `json:"type"`
+	Static        MinecraftDeploymentStaticSpec `json:"static"`
+	LobbyPriority int                           `json:"lobbyPriority"`
+	Template      corev1.PodTemplateSpec        `json:"template"`
 }
 
 // MinecraftDeploymentStatus defines the observed state of MinecraftDeployment
 type MinecraftDeploymentStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	Replicas int `json:"replicas"`
+	Ready    int `json:"ready"`
 }
 
 //+kubebuilder:object:root=true
