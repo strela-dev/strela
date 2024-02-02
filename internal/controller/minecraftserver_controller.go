@@ -57,7 +57,6 @@ func (r *MinecraftServerReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 
 	var minecraftServer streladevv1.MinecraftServer
 	if err := r.Get(ctx, req.NamespacedName, &minecraftServer); err != nil {
-		log.Error(err, "unable to fetch MinecraftServer")
 		// we'll ignore not-found errors, since they can't be fixed by an immediate
 		// requeue (we'll need to wait for a new notification), and we can get them
 		// on deleted requests.
@@ -139,7 +138,7 @@ func createNewPodFromTemplate(minecraftServer streladevv1.MinecraftServer) (*cor
 	}
 
 	containers := make([]corev1.Container, 0, 1+len(pod.Spec.Containers))
-	//containers = append(containers, createSideCarContainer(podName))
+	containers = append(containers, createSideCarContainer(podName))
 	containers = append(containers, pod.Spec.Containers...)
 	pod.Spec.Containers = containers
 

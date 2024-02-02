@@ -55,8 +55,7 @@ func (r *MinecraftServerSetReconciler) Reconcile(ctx context.Context, req ctrl.R
 
 	var minecraftServerSet streladevv1.MinecraftServerSet
 	if err := r.Get(ctx, req.NamespacedName, &minecraftServerSet); err != nil {
-		log.Error(err, "unable to fetch MinecraftServerSet")
-		// we'll ignore not-found errors, since they can't be fixed by an immediate
+		/// we'll ignore not-found errors, since they can't be fixed by an immediate
 		// requeue (we'll need to wait for a new notification), and we can get them
 		// on deleted requests.
 		return ctrl.Result{}, client.IgnoreNotFound(err)
@@ -66,7 +65,7 @@ func (r *MinecraftServerSetReconciler) Reconcile(ctx context.Context, req ctrl.R
 
 	// List options with matching fields
 	var childMinecraftServers streladevv1.MinecraftServerList
-	if err := r.List(ctx, &childMinecraftServers, client.InNamespace(req.Namespace), client.MatchingFields{minecraftOwnerKey: req.Name}); err != nil {
+	if err := r.List(ctx, &childMinecraftServers, client.InNamespace(req.Namespace), client.MatchingFields{minecraftServerOwnerKey: req.Name}); err != nil {
 		log.Error(err, "unable to list child MinecraftServers")
 		return ctrl.Result{}, err
 	}
@@ -129,13 +128,13 @@ func determineIngameServerCount(servers []streladevv1.MinecraftServer) int {
 }
 
 var (
-	minecraftOwnerKey = ".metadata.controller"
-	apiGVStr          = streladevv1.GroupVersion.String()
+	minecraftServerOwnerKey = ".metadata.controller"
+	apiGVStr                = streladevv1.GroupVersion.String()
 )
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *MinecraftServerSetReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &streladevv1.MinecraftServer{}, minecraftOwnerKey, func(rawObj client.Object) []string {
+	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &streladevv1.MinecraftServer{}, minecraftServerOwnerKey, func(rawObj client.Object) []string {
 
 		minecraftServer := rawObj.(*streladevv1.MinecraftServer)
 		owner := metav1.GetControllerOf(minecraftServer)

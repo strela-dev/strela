@@ -56,7 +56,9 @@ func (r *MinecraftDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.
 	// Fetch the MinecraftDeployment instance
 	var deployment streladevv1.MinecraftDeployment
 	if err := r.Get(ctx, req.NamespacedName, &deployment); err != nil {
-		logger.Error(err, "unable to fetch MinecraftDeployment")
+		// we'll ignore not-found errors, since they can't be fixed by an immediate
+		// requeue (we'll need to wait for a new notification), and we can get them
+		// on deleted requests.
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
@@ -70,17 +72,17 @@ func (r *MinecraftDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.
 
 	// List all MinecraftServerSets owned by this MinecraftDeployment
 	var serverSets streladevv1.MinecraftServerSetList
-	if err := r.List(ctx, &serverSets, client.InNamespace(deployment.Namespace), client.MatchingFields{"metadata.name": hashedName}); err != nil {
-		logger.Error(err, "unable to list child MinecraftServerSets")
+	if err := r.List(ctx, &serverSets, client.InNamespace(req.Namespace), client.MatchingFields{minecraftServerSetOwnerKey: req.Name}); err != nil {
+		logger.Error(err, "unable to list child MinecraftServers")
 		return ctrl.Result{}, err
 	}
 
 	// Determine the current ServerSet and outdated ServerSets
 	var currentServerSet *streladevv1.MinecraftServerSet
 	outdatedServerSets := make([]streladevv1.MinecraftServerSet, 0)
-	for i, ss := range serverSets.Items {
+	for _, ss := range serverSets.Items {
 		if ss.Name == hashedName {
-			currentServerSet = &serverSets.Items[i]
+			currentServerSet = &ss
 		} else {
 			outdatedServerSets = append(outdatedServerSets, ss)
 		}
@@ -117,7 +119,7 @@ func (r *MinecraftDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.
 			},
 			Spec: streladevv1.MinecraftServerSetSpec{
 				Replicas: deployment.Spec.Replicas,
-				Template: deployment.Spec.Template,
+				Template: *deployment.Spec.Template.DeepCopy(),
 			},
 		}
 		if err := r.Create(ctx, newServerSet); err != nil {
@@ -125,6 +127,14 @@ func (r *MinecraftDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.
 			return ctrl.Result{}, err
 		}
 		return ctrl.Result{Requeue: true}, nil
+	}
+
+	if currentServerSet.Spec.Replicas != deployment.Spec.Replicas {
+		currentServerSet.Spec.Replicas = deployment.Spec.Replicas
+		if err := r.Update(ctx, currentServerSet); err != nil {
+			logger.Error(err, "failed to update MinecraftServerSet spec")
+			return ctrl.Result{}, err
+		}
 	}
 
 	// Update the MinecraftDeployment status
@@ -146,8 +156,29 @@ func generatePodTemplateSpecHash(template streladevv1.MinecraftServerTemplateSpe
 	return strconv.FormatUint(uint64(hasher.Sum32()), 16), nil
 }
 
+var (
+	minecraftServerSetOwnerKey = ".metadata.controller"
+)
+
 // SetupWithManager sets up the controller with the Manager.
 func (r *MinecraftDeploymentReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &streladevv1.MinecraftServerSet{}, minecraftServerSetOwnerKey, func(rawObj client.Object) []string {
+
+		minecraftServerSet := rawObj.(*streladevv1.MinecraftServerSet)
+		owner := metav1.GetControllerOf(minecraftServerSet)
+		if owner == nil {
+			return nil
+		}
+
+		if owner.APIVersion != apiGVStr || owner.Kind != "MinecraftDeployment" {
+			return nil
+		}
+
+		return []string{owner.Name}
+	}); err != nil {
+		return err
+	}
+
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&streladevv1.MinecraftDeployment{}).
 		Owns(&streladevv1.MinecraftServerSet{}).

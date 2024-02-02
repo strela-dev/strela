@@ -9,7 +9,7 @@ metadata:
     app.kubernetes.io/created-by: strela
   name: minecraftdeployment-sample
 spec:
-  replicas: 0
+  replicas: 1
   type: PROXY
   static:
     enabled: false
