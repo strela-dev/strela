@@ -66,7 +66,7 @@ func (r *MinecraftDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.
 		logger.Error(err, "failed to generate PodTemplateSpec hash")
 		return ctrl.Result{}, err
 	}
-	hashedName := fmt.Sprintf("%s-%s", deployment.Name, podTemplateHash[:10])
+	hashedName := fmt.Sprintf("%s-%s", deployment.Name, podTemplateHash[:8])
 
 	// List all MinecraftServerSets owned by this MinecraftDeployment
 	var serverSets streladevv1.MinecraftServerSetList

@@ -9,4 +9,20 @@ metadata:
     app.kubernetes.io/created-by: strela
   name: minecraftdeployment-sample
 spec:
-  # TODO(user): Add fields here
+  replicas: 0
+  type: PROXY
+  static:
+    enabled: false
+  template:
+    spec:
+      template:
+        spec:
+          containers:
+            - image: nginx:latest
+              imagePullPolicy: Always
+              name: proxy
+              tty: true
+              stdin: true
+              ports:
+                - containerPort: 25577
+                  name: main

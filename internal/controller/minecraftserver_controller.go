@@ -139,7 +139,7 @@ func createNewPodFromTemplate(minecraftServer streladevv1.MinecraftServer) (*cor
 	}
 
 	containers := make([]corev1.Container, 0, 1+len(pod.Spec.Containers))
-	containers = append(containers, createSideCarContainer(podName))
+	//containers = append(containers, createSideCarContainer(podName))
 	containers = append(containers, pod.Spec.Containers...)
 	pod.Spec.Containers = containers
 
