@@ -125,8 +125,10 @@ func createNewPodFromTemplate(minecraftServer streladevv1.MinecraftServer) (*cor
 
 	podTemplate := minecraftServer.Spec.Template
 	podName := minecraftServer.Name
+	objectMeta := *podTemplate.ObjectMeta.DeepCopy()
+	objectMeta.Labels = minecraftServer.Labels
 	pod := &corev1.Pod{
-		ObjectMeta: *podTemplate.ObjectMeta.DeepCopy(),
+		ObjectMeta: objectMeta,
 		Spec:       *podTemplate.Spec.DeepCopy(),
 	}
 

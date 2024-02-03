@@ -105,8 +105,10 @@ func (r *MinecraftServerSetReconciler) Reconcile(ctx context.Context, req ctrl.R
 
 func createNewMinecraftServerFromTemplate(set streladevv1.MinecraftServerSet) *streladevv1.MinecraftServer {
 	template := set.Spec.Template
+	objectMeta := *template.ObjectMeta.DeepCopy()
+	objectMeta.Labels = set.Labels
 	server := &streladevv1.MinecraftServer{
-		ObjectMeta: *template.ObjectMeta.DeepCopy(),
+		ObjectMeta: objectMeta,
 		Spec:       *template.Spec.DeepCopy(),
 	}
 
