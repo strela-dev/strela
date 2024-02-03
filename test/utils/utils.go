@@ -18,11 +18,10 @@ package utils
 
 import (
 	"fmt"
+	. "github.com/onsi/ginkgo/v2" //nolint:golint,revive
 	"os"
 	"os/exec"
 	"strings"
-
-	//nolint:golint,revive
 )
 
 const (
