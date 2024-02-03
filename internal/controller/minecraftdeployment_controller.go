@@ -113,9 +113,7 @@ func (r *MinecraftDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      hashedName,
 				Namespace: deployment.Namespace,
-				Labels: map[string]string{
-					"cloud-group": deployment.Name,
-				},
+				Labels:    deployment.Labels,
 				OwnerReferences: []metav1.OwnerReference{
 					*metav1.NewControllerRef(&deployment, streladevv1.GroupVersion.WithKind("MinecraftDeployment")),
 				},
