@@ -11,8 +11,6 @@ metadata:
 spec:
   replicas: 1
   type: PROXY
-  static:
-    enabled: false
   template:
     spec:
       template:

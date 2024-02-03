@@ -31,22 +31,16 @@ const (
 	Server MinecraftDeploymentType = "SERVER"
 )
 
-type MinecraftDeploymentStaticSpec struct {
-	Enabled         bool   `json:"enabled,omitempty"`
-	StorageCapacity string `json:"storageCapacity,omitempty"`
-}
-
 // MinecraftDeploymentSpec defines the desired state of MinecraftDeployment
 type MinecraftDeploymentSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// Foo is an example field of MinecraftDeployment. Edit minecraftdeployment_types.go to remove/update
-	Replicas      int                           `json:"replicas,omitempty"`
-	Type          MinecraftDeploymentType       `json:"type,omitempty"`
-	Static        MinecraftDeploymentStaticSpec `json:"static,omitempty"`
-	LobbyPriority int                           `json:"lobbyPriority,omitempty"`
-	Template      MinecraftServerTemplateSpec   `json:"template,omitempty"`
+	Replicas      int                         `json:"replicas,omitempty"`
+	Type          MinecraftDeploymentType     `json:"type,omitempty"`
+	LobbyPriority int                         `json:"lobbyPriority,omitempty"`
+	Template      MinecraftServerTemplateSpec `json:"template,omitempty"`
 }
 
 // MinecraftDeploymentStatus defines the observed state of MinecraftDeployment
