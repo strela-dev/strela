@@ -46,13 +46,6 @@ spec:
                 description: Foo is an example field of MinecraftDeployment. Edit
                   minecraftdeployment_types.go to remove/update
                 type: integer
-              static:
-                properties:
-                  enabled:
-                    type: boolean
-                  storageCapacity:
-                    type: string
-                type: object
               template:
                 properties:
                   metadata:
