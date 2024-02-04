@@ -7,6 +7,7 @@ metadata:
     app.kubernetes.io/part-of: strela
     app.kubernetes.io/managed-by: kustomize
     app.kubernetes.io/created-by: strela
+    cloud-group: minecraftdeployment-sample
   name: minecraftdeployment-sample
 spec:
   replicas: 1
@@ -16,7 +17,7 @@ spec:
       template:
         spec:
           containers:
-            - image: nginx:latest
+            - image: ghcr.io/strela-dev/docker-minecraft-proxy:main
               imagePullPolicy: Always
               name: proxy
               tty: true
@@ -24,3 +25,18 @@ spec:
               ports:
                 - containerPort: 25577
                   name: main
+              env:
+                - name: "TYPE"
+                  value: "VELOCITY"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: proxy
+spec:
+  type: NodePort
+  selector:
+    cloud-group: minecraftdeployment-sample
+  ports:
+    - port: 25577
+      nodePort: 30065
