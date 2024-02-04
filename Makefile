@@ -160,7 +160,7 @@ undeploy: kustomize ## Undeploy controller from the K8s cluster specified in ~/.
 
 ##@ Dependencies
 
-CHART_NAME ?= charts/strela
+CHART_NAME ?= helm/charts/strela
 
 ## Location to install dependencies to
 LOCALBIN ?= $(shell pwd)/bin
