@@ -50,8 +50,8 @@ type MinecraftServerSetReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.16.3/pkg/reconcile
 func (r *MinecraftServerSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	log := log.FromContext(ctx)
-	log.Info("Reconcile of " + req.NamespacedName.String())
+	logger := log.FromContext(ctx)
+	logger.Info("Reconcile of " + req.NamespacedName.String())
 
 	var minecraftServerSet streladevv1.MinecraftServerSet
 	if err := r.Get(ctx, req.NamespacedName, &minecraftServerSet); err != nil {
@@ -66,15 +66,38 @@ func (r *MinecraftServerSetReconciler) Reconcile(ctx context.Context, req ctrl.R
 	// List options with matching fields
 	var childMinecraftServers streladevv1.MinecraftServerList
 	if err := r.List(ctx, &childMinecraftServers, client.InNamespace(req.Namespace), client.MatchingFields{minecraftServerOwnerKey: req.Name}); err != nil {
-		log.Error(err, "unable to list child MinecraftServers")
+		logger.Error(err, "unable to list child MinecraftServers")
 		return ctrl.Result{}, err
 	}
 
 	minecraftServers := childMinecraftServers.Items
 	ingameCount := determineIngameServerCount(minecraftServers)
+	readyCount := determineReadyServerCount(minecraftServers)
 	notIngameCount := len(minecraftServers) - ingameCount
 
 	if notIngameCount == minecraftServerSet.Spec.Replicas {
+		//update status
+		needUpdate := false
+		if minecraftServerSet.Status.Replicas != len(minecraftServers) {
+			minecraftServerSet.Status.Replicas = len(minecraftServers)
+			needUpdate = true
+		}
+		if minecraftServerSet.Status.Ready != readyCount {
+			minecraftServerSet.Status.Ready = readyCount
+			needUpdate = true
+		}
+		if minecraftServerSet.Status.Ingame != ingameCount {
+			minecraftServerSet.Status.Ingame = ingameCount
+			needUpdate = true
+		}
+
+		if needUpdate {
+			if err := r.Status().Update(ctx, &minecraftServerSet); err != nil {
+				logger.Error(err, "failed to update MinecraftDeployment status")
+				return ctrl.Result{}, err
+			}
+		}
+
 		return ctrl.Result{}, nil
 	}
 
@@ -82,7 +105,7 @@ func (r *MinecraftServerSetReconciler) Reconcile(ctx context.Context, req ctrl.R
 		serverToStop := minecraftServers[0]
 
 		if err := r.Delete(ctx, &serverToStop); err != nil {
-			log.Error(err, "unable to create Pod for MinecraftServer", "minecraftServer", serverToStop)
+			logger.Error(err, "unable to create Pod for MinecraftServer", "minecraftServer", serverToStop)
 			return ctrl.Result{}, err
 		}
 
@@ -96,7 +119,7 @@ func (r *MinecraftServerSetReconciler) Reconcile(ctx context.Context, req ctrl.R
 	}
 
 	if err := r.Create(ctx, newMinecraftServer); err != nil {
-		log.Error(err, "unable to create Pod for MinecraftServer", "minecraftServer", newMinecraftServer)
+		logger.Error(err, "unable to create Pod for MinecraftServer", "minecraftServer", newMinecraftServer)
 		return ctrl.Result{}, err
 	}
 
@@ -123,6 +146,16 @@ func determineIngameServerCount(servers []streladevv1.MinecraftServer) int {
 	count := 0
 	for _, server := range servers {
 		if server.Status.Ingame {
+			count++
+		}
+	}
+	return count
+}
+
+func determineReadyServerCount(servers []streladevv1.MinecraftServer) int {
+	count := 0
+	for _, server := range servers {
+		if server.Status.Ready {
 			count++
 		}
 	}

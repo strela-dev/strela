@@ -41,8 +41,12 @@ spec:
             description: MinecraftServerAutoscalerSpec defines the desired state of
               MinecraftServerAutoscaler
             properties:
-              function:
-                type: string
+              constant:
+                type: integer
+              desiredPlayers:
+                type: integer
+              factor:
+                type: integer
               minScalePause:
                 type: integer
               targetDeployment:
@@ -50,7 +54,6 @@ spec:
               type:
                 type: string
             required:
-            - function
             - minScalePause
             - targetDeployment
             - type

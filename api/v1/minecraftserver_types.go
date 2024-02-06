@@ -17,8 +17,11 @@ limitations under the License.
 package v1
 
 import (
+	"fmt"
+	"hash/fnv"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"strconv"
 )
 
 type ConfigurationMode string
@@ -82,6 +85,14 @@ type MinecraftServerList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []MinecraftServer `json:"items"`
+}
+
+func (template *MinecraftServerTemplateSpec) GenerateTemplateSpecHash() (string, error) {
+	hasher := fnv.New32a()
+	if _, err := hasher.Write([]byte(fmt.Sprintf("%+v", template))); err != nil {
+		return "", err
+	}
+	return strconv.FormatUint(uint64(hasher.Sum32()), 16), nil
 }
 
 func init() {
