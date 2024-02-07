@@ -27,7 +27,6 @@ type MinecraftDeploymentType string
 
 const (
 	Proxy  MinecraftDeploymentType = "PROXY"
-	Lobby  MinecraftDeploymentType = "LOBBY"
 	Server MinecraftDeploymentType = "SERVER"
 )
 
@@ -37,10 +36,9 @@ type MinecraftDeploymentSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// Foo is an example field of MinecraftDeployment. Edit minecraftdeployment_types.go to remove/update
-	Replicas      int                         `json:"replicas,omitempty"`
-	Type          MinecraftDeploymentType     `json:"type,omitempty"`
-	LobbyPriority int                         `json:"lobbyPriority,omitempty"`
-	Template      MinecraftServerTemplateSpec `json:"template,omitempty"`
+	Replicas int                         `json:"replicas,omitempty"`
+	Type     MinecraftDeploymentType     `json:"type,omitempty"`
+	Template MinecraftServerTemplateSpec `json:"template,omitempty"`
 }
 
 // MinecraftDeploymentStatus defines the observed state of MinecraftDeployment
