@@ -34,7 +34,9 @@ const (
 type MinecraftServerAutoscalerSpec struct {
 	TargetDeployment string                        `json:"targetDeployment"`
 	Type             MinecraftServerAutoscalerType `json:"type"`
-	Function         string                        `json:"function"`
+	DesiredPlayers   int                           `json:"desiredPlayers,omitempty"`
+	Factor           int                           `json:"factor,omitempty"`
+	Constant         int                           `json:"constant,omitempty"`
 	MinScalePause    int                           `json:"minScalePause"`
 }
 

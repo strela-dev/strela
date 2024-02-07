@@ -48,6 +48,7 @@ type MinecraftServerSet struct {
 // MinecraftServerSetStatus defines the observed state of MinecraftServerSet
 type MinecraftServerSetStatus struct {
 	Replicas int `json:"replicas,omitempty"`
+	Ingame   int `json:"ingame,omitempty"`
 	Ready    int `json:"ready,omitempty"`
 }
 

@@ -18,11 +18,8 @@ package controller
 
 import (
 	"context"
-	"fmt"
 	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
-	"math"
 	"time"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -54,6 +51,8 @@ type MinecraftServerAutoscalerReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.17.0/pkg/reconcile
 func (r *MinecraftServerAutoscalerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	logger := log.FromContext(ctx)
+
+	logger.Info("!!--Reconcile of ", "name", req.NamespacedName.String())
 
 	var autoscaler streladevv1.MinecraftServerAutoscaler
 	if err := r.Get(ctx, req.NamespacedName, &autoscaler); err != nil {
@@ -101,85 +100,48 @@ func (r *MinecraftServerAutoscalerReconciler) evaluateAutoscaler(ctx context.Con
 	return nil
 }
 
-// getMinecraftServersForAutoscaler fetches all MinecraftServer instances associated with the given autoscaler.
-func (r *MinecraftServerAutoscalerReconciler) getMinecraftServersForAutoscaler(ctx context.Context, autoscaler *streladevv1.MinecraftServerAutoscaler) ([]streladevv1.MinecraftServer, error) {
-	var minecraftServerList streladevv1.MinecraftServerList
-
-	// Define the label selector based on the autoscaler's target deployment
-	labelSelector := labels.SelectorFromSet(labels.Set{"autoscalerTargetDeployment": autoscaler.Spec.TargetDeployment})
-
-	// ListOptions to include the label selector
-	listOpts := []client.ListOption{
-		client.InNamespace(autoscaler.Namespace),
-		client.MatchingLabelsSelector{Selector: labelSelector},
-	}
-
-	// Fetching the list of MinecraftServer resources
-	if err := r.List(ctx, &minecraftServerList, listOpts...); err != nil {
-		return nil, fmt.Errorf("failed to list MinecraftServers for autoscaler %s: %w", autoscaler.Name, err)
-	}
-
-	// Now you can return minecraftServerList.Items, which is a slice of MinecraftServer
-	return minecraftServerList.Items, nil
-}
-
-func (r *MinecraftServerAutoscalerReconciler) determineDesiredReplicaCount(ctx context.Context, autoscaler *streladevv1.MinecraftServerAutoscaler, targetGroup *streladevv1.MinecraftDeployment) (int, error) {
+func (r *MinecraftServerAutoscalerReconciler) determineDesiredReplicaCount(ctx context.Context, autoscaler *streladevv1.MinecraftServerAutoscaler, targetDeployment *streladevv1.MinecraftDeployment) (int, error) {
 	switch autoscaler.Spec.Type {
 	case streladevv1.ServerAutoscale:
-		return r.determineReplicaCountForServer(ctx, autoscaler)
+		return r.determineReplicaCountForServer(autoscaler, targetDeployment)
 	case streladevv1.SlotAutoscale:
-		return r.determineReplicaCountForSlots(ctx, autoscaler, targetGroup)
+		return r.determineReplicaCountForSlots(ctx, autoscaler, targetDeployment)
 	default:
 		// Handle unexpected autoscaler type
-		return targetGroup.Spec.Replicas, nil
+		return targetDeployment.Spec.Replicas, nil
 	}
 }
 
-func (r *MinecraftServerAutoscalerReconciler) determineReplicaCountForServer(ctx context.Context, autoscaler *streladevv1.MinecraftServerAutoscaler) (int, error) {
-	// Placeholder: Implement logic to determine replica count based on server count
-	servers, err := r.getMinecraftServersForAutoscaler(ctx, autoscaler)
-	if err != nil {
-		return 0, err
-	}
+func (r *MinecraftServerAutoscalerReconciler) determineReplicaCountForServer(autoscaler *streladevv1.MinecraftServerAutoscaler, targetDeployment *streladevv1.MinecraftDeployment) (int, error) {
+	ingameServerCount := targetDeployment.Status.Ingame
 
-	ingameServerCount := 0
-	for _, server := range servers {
-		if server.Status.Ingame {
-			ingameServerCount++
-		}
-	}
-
-	// Placeholder for invoking custom logic function
-	// In Go, you would likely use a different approach to execute custom logic
-	// For simplicity, let's assume a static logic for now
-	return ingameServerCount + 1, nil // Example logic, adjust as necessary
+	desiredReplicas := autoscaler.Spec.Constant + autoscaler.Spec.Factor*ingameServerCount
+	return desiredReplicas, nil
 }
 
-func (r *MinecraftServerAutoscalerReconciler) determineReplicaCountForSlots(ctx context.Context, autoscaler *streladevv1.MinecraftServerAutoscaler, targetGroup *streladevv1.MinecraftDeployment) (int, error) {
-	servers, err := r.getMinecraftServersForAutoscaler(ctx, autoscaler)
-	if err != nil {
-		return 0, err
-	}
+func (r *MinecraftServerAutoscalerReconciler) determineReplicaCountForSlots(ctx context.Context, autoscaler *streladevv1.MinecraftServerAutoscaler, targetDeployment *streladevv1.MinecraftDeployment) (int, error) {
 
-	if len(servers) == 0 {
+	if targetDeployment.Status.Replicas == 0 {
 		return 1, nil
 	}
+	/*
+		targetDeployment.
 
-	maxPlayerCount := servers[0].Spec.MaxPlayers // Assuming all servers have the same MaxPlayers
-	maxSlots := 0
-	occupiedSlots := 0
-	for _, server := range servers {
-		maxSlots += server.Spec.MaxPlayers
-		occupiedSlots += server.Status.PlayerCount
-	}
+		maxSlots := 0
+		occupiedSlots := 0
+		for _, server := range servers {
+			maxSlots += server.Spec.MaxPlayers
+			occupiedSlots += server.Status.PlayerCount
+		}
 
-	// Example static logic to determine additional slots needed
-	// Replace this with actual logic possibly involving autoscaler.Spec.Function
-	desiredAvailableSlots := 10 // Placeholder value
-	missingSlots := desiredAvailableSlots - (maxSlots - occupiedSlots)
-	replicaDiff := int(math.Ceil(float64(missingSlots) / float64(maxPlayerCount)))
+		currReplicas := len(servers)
+		avgPlayerValue := int(math.Ceil(float64(occupiedSlots / currReplicas)))
 
-	return targetGroup.Spec.Replicas + replicaDiff, nil
+		//logic from HPA
+		desiredReplicas := int(math.Ceil(float64(currReplicas * (avgPlayerValue / autoscaler.Spec.DesiredPlayers))))
+	*/
+
+	return 1, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.

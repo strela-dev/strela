@@ -17,7 +17,11 @@ limitations under the License.
 package v1
 
 import (
+	"context"
+	"fmt"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
@@ -45,6 +49,7 @@ type MinecraftDeploymentSpec struct {
 type MinecraftDeploymentStatus struct {
 	Replicas int `json:"replicas,omitempty"`
 	Ready    int `json:"ready,omitempty"`
+	Ingame   int `json:"ingame,omitempty"`
 }
 
 //+kubebuilder:object:root=true
@@ -66,6 +71,32 @@ type MinecraftDeploymentList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 	Items           []MinecraftDeployment `json:"items"`
+}
+
+const MinecraftServerSetOwnerKey string = ".metadata.controller"
+
+func (m *MinecraftDeployment) GetMinecraftSets(cl client.Client, ctx context.Context) ([]MinecraftServerSet, error) {
+	// List all MinecraftServerSets owned by this MinecraftDeployment
+	var serverSets MinecraftServerSetList
+	if err := cl.List(ctx, &serverSets, client.InNamespace("test"), client.MatchingFields{MinecraftServerSetOwnerKey: m.Name}); err != nil {
+		return nil, err
+	}
+	return serverSets.Items, nil
+}
+
+func (deployment *MinecraftDeployment) GetActiveMinecraftServerSet(cl client.Client, ctx context.Context) (*MinecraftServerSet, error) {
+	podTemplateHash, err := deployment.Spec.Template.GenerateTemplateSpecHash()
+	if err != nil {
+		return nil, err
+	}
+	hashedName := fmt.Sprintf("%s-%s", deployment.Name, podTemplateHash[:8])
+
+	var minecraftServerSet MinecraftServerSet
+	if err := cl.Get(ctx, types.NamespacedName{Namespace: deployment.Namespace, Name: hashedName}, &minecraftServerSet); err != nil {
+		return nil, err
+	}
+
+	return &minecraftServerSet, nil
 }
 
 func init() {

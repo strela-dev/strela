@@ -58,5 +58,6 @@ func (r *MinecraftStatefulSetReconciler) Reconcile(ctx context.Context, req ctrl
 func (r *MinecraftStatefulSetReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&streladevv1.MinecraftStatefulSet{}).
+		Owns(&streladevv1.MinecraftServer{}).
 		Complete(r)
 }
