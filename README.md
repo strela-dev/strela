@@ -1,10 +1,9 @@
-# strela
-// TODO(user): Add simple overview of use/purpose
+# Strela
+Use Strela to manage and create your own Minecraft server into your own Kubernetes cluster. Learn everything about Strela and integrate Strela into your Kubernetes cluster.
 
-## Description
-// TODO(user): An in-depth paragraph about your project and overview of use
+For a detailed explanation and practical examples on how to use Strela, please visit our [Official documentation](https://docs.strela.dev).
 
-## Getting Started
+## Getting Started with this codebase
 
 ### Prerequisites
 - go version v1.21.0+
