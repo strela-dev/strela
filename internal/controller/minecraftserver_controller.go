@@ -19,6 +19,7 @@ package controller
 import (
 	"context"
 	"errors"
+	"fmt"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
@@ -42,6 +43,7 @@ type MinecraftServerReconciler struct {
 //+kubebuilder:rbac:groups=strela.dev,resources=minecraftservers/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=strela.dev,resources=minecraftservers/finalizers,verbs=update
 //+kubebuilder:rbac:groups=core,resources=pods,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=core,resources=serviceaccounts,verbs=get;list;watch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -99,7 +101,7 @@ func (r *MinecraftServerReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	// we'll ignore not-found errors, since they can't be fixed by an immediate
 	// requeue (we'll need to wait for a new notification), and we can get them
 	// on deleted requests.
-	newPod, err := createNewPodFromTemplate(minecraftServer)
+	newPod, err := createNewPodFromTemplate(ctx, r, minecraftServer)
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -116,13 +118,19 @@ func (r *MinecraftServerReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	return ctrl.Result{}, nil
 }
 
-func createNewPodFromTemplate(minecraftServer streladevv1.MinecraftServer) (*corev1.Pod, error) {
+func createNewPodFromTemplate(ctx context.Context, r *MinecraftServerReconciler, minecraftServer streladevv1.MinecraftServer) (*corev1.Pod, error) {
+	//log := log.FromContext(ctx)
 	minecraftServerContainer, err := findMinecraftServerContainer(&minecraftServer)
 	if err != nil {
 		return nil, err
 	}
 
 	println("Found container with name " + minecraftServerContainer.Name)
+
+	//namespaceName, err := r.findNamespaceName(ctx)
+	//if err != nil {
+	//	log.Error(err, "unable to find strela namespace", minecraftServer)
+	//}
 
 	podTemplate := minecraftServer.Spec.Template
 	podName := minecraftServer.Name
@@ -138,6 +146,11 @@ func createNewPodFromTemplate(minecraftServer streladevv1.MinecraftServer) (*cor
 
 	if minecraftServer.Spec.ConfigDir != "" {
 		configureInitContainer(pod, minecraftServerContainer, &minecraftServer)
+	}
+
+	serviceAccountName, err := r.findServiceAccountName(ctx)
+	if err == nil {
+		pod.Spec.ServiceAccountName = serviceAccountName
 	}
 
 	containers := make([]corev1.Container, 0, 1+len(pod.Spec.Containers))
@@ -241,6 +254,46 @@ func findMinecraftServerContainer(server *streladevv1.MinecraftServer) (*corev1.
 		}
 	}
 	return nil, errors.New("'container' field was set but a container with the name was not found")
+}
+
+var stelaLaberls = map[string]string{
+	"app.kubernetes.io/part-of": "strela",
+}
+
+func (r *MinecraftServerReconciler) findServiceAccountName(ctx context.Context) (string, error) {
+	saList := &corev1.ServiceAccountList{}
+	listOpts := []client.ListOption{
+		client.MatchingLabels(stelaLaberls),
+	}
+
+	if err := r.Client.List(ctx, saList, listOpts...); err != nil {
+		return "", err
+	}
+
+	if len(saList.Items) == 0 {
+		return "", fmt.Errorf("no service accounts foudn matching label: %v", stelaLaberls)
+	}
+
+	fmt.Println("Found service account " + saList.Items[0].Name)
+
+	return saList.Items[0].Name, nil
+}
+
+func (r *MinecraftServerReconciler) findNamespaceName(ctx context.Context) (string, error) {
+	nList := &corev1.NamespaceList{}
+	listOpts := []client.ListOption{
+		client.MatchingLabels(stelaLaberls),
+	}
+
+	if err := r.Client.List(ctx, nList, listOpts...); err != nil {
+		return "", err
+	}
+
+	if len(nList.Items) == 0 {
+		return "", fmt.Errorf("no service accounts foudn matching label: %v", stelaLaberls)
+	}
+
+	return nList.Items[0].Name, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
