@@ -22,6 +22,7 @@ import (
 	"fmt"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -32,6 +33,8 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	streladevv1 "strela.dev/strela/api/v1"
 )
+
+const minecraftServerFinalizer = "finalizer.strela.dev"
 
 // MinecraftServerReconciler reconciles a MinecraftServer object
 type MinecraftServerReconciler struct {
@@ -70,6 +73,11 @@ func (r *MinecraftServerReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	podNamespacedName := types.NamespacedName{Namespace: minecraftServer.Namespace, Name: minecraftServer.Name}
 	errPod := r.Get(ctx, podNamespacedName, &currentPod)
 
+	res, err := r.handleFinalizer(ctx, &minecraftServer, currentPod)
+	if err != nil || res.Return {
+		return res.KubeResult(), err
+	}
+
 	if errPod == nil {
 		//Pod already exist
 
@@ -98,9 +106,6 @@ func (r *MinecraftServerReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		return ctrl.Result{}, client.IgnoreNotFound(errPod)
 	}
 
-	// we'll ignore not-found errors, since they can't be fixed by an immediate
-	// requeue (we'll need to wait for a new notification), and we can get them
-	// on deleted requests.
 	newPod, err := createNewPodFromTemplate(ctx, r, minecraftServer)
 	if err != nil {
 		return ctrl.Result{}, err
@@ -116,6 +121,48 @@ func (r *MinecraftServerReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	}
 
 	return ctrl.Result{}, nil
+}
+
+func (r *MinecraftServerReconciler) handleFinalizer(ctx context.Context, minecraftServer *streladevv1.MinecraftServer, currPod corev1.Pod) (SubResult, error) {
+	if minecraftServer.ObjectMeta.DeletionTimestamp.IsZero() {
+		// The object is not being deleted, so if it does not have our finalizer,
+		// then lets add the finalizer and update the object. This is equivalent
+		// to registering our finalizer.
+		if !controllerutil.ContainsFinalizer(minecraftServer, minecraftServerFinalizer) {
+			controllerutil.AddFinalizer(minecraftServer, minecraftServerFinalizer)
+			if err := r.Update(ctx, minecraftServer); err != nil {
+				return SubResult{Return: true}, err
+			}
+		}
+	} else {
+		// The object is being deleted
+		if controllerutil.ContainsFinalizer(minecraftServer, minecraftServerFinalizer) {
+			// our finalizer is present, so lets handle any external dependency
+
+			var podExists = currPod.Name != ""
+			if podExists && currPod.DeletionTimestamp != nil {
+				// Pod is being deleted
+				return SubResult{Return: true}, nil
+			}
+
+			if podExists {
+				if err := r.Delete(ctx, &currPod); err != nil {
+					return SubResult{Return: true}, err
+				}
+				return SubResult{Return: true}, nil
+			}
+
+			// remove our finalizer from the list and update it.
+			controllerutil.RemoveFinalizer(minecraftServer, minecraftServerFinalizer)
+			if err := r.Update(ctx, minecraftServer); err != nil {
+				return SubResult{Return: true}, err
+			}
+		}
+
+		// Stop reconciliation as the item is being deleted
+		return SubResult{Return: true}, nil
+	}
+	return SubResult{Return: false}, nil
 }
 
 func createNewPodFromTemplate(ctx context.Context, r *MinecraftServerReconciler, minecraftServer streladevv1.MinecraftServer) (*corev1.Pod, error) {
