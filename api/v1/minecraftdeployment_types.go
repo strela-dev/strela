@@ -78,7 +78,7 @@ const MinecraftServerSetOwnerKey string = ".metadata.controller"
 func (m *MinecraftDeployment) GetMinecraftSets(cl client.Client, ctx context.Context) ([]MinecraftServerSet, error) {
 	// List all MinecraftServerSets owned by this MinecraftDeployment
 	var serverSets MinecraftServerSetList
-	if err := cl.List(ctx, &serverSets, client.InNamespace("test"), client.MatchingFields{MinecraftServerSetOwnerKey: m.Name}); err != nil {
+	if err := cl.List(ctx, &serverSets, client.InNamespace(m.Namespace), client.MatchingFields{MinecraftServerSetOwnerKey: m.Name}); err != nil {
 		return nil, err
 	}
 	return serverSets.Items, nil
