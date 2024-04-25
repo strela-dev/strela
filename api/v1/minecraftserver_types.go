@@ -45,8 +45,8 @@ type MinecraftServerSpec struct {
 	Container         string                 `json:"container,omitempty"`
 	ConfigDir         string                 `json:"configDir,omitempty"`
 	Template          corev1.PodTemplateSpec `json:"template"`
-	ConfigurationMode `json:"configurationMode,omitempty"`
-	MaxPlayers        int `json:"maxPlayers,omitempty"`
+	ConfigurationMode ConfigurationMode      `json:"configurationMode,omitempty"`
+	MaxPlayers        int                    `json:"maxPlayers,omitempty"`
 }
 
 // MinecraftServerStatus defines the observed state of MinecraftServer
@@ -89,7 +89,7 @@ type MinecraftServerList struct {
 
 func (template *MinecraftServerTemplateSpec) GenerateTemplateSpecHash() (string, error) {
 	hasher := fnv.New32a()
-	if _, err := hasher.Write([]byte(fmt.Sprintf("%+v", template))); err != nil {
+	if _, err := hasher.Write([]byte(fmt.Sprintf("%+v", *template))); err != nil {
 		return "", err
 	}
 	return strconv.FormatUint(uint64(hasher.Sum32()), 16), nil
