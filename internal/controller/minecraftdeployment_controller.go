@@ -111,15 +111,18 @@ func (r *MinecraftDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.
 				Name:      hashedName,
 				Namespace: deployment.Namespace,
 				Labels:    deployment.Labels,
-				OwnerReferences: []metav1.OwnerReference{
-					*metav1.NewControllerRef(&deployment, streladevv1.GroupVersion.WithKind("MinecraftDeployment")),
-				},
 			},
 			Spec: streladevv1.MinecraftServerSetSpec{
 				Replicas: deployment.Spec.Replicas,
 				Template: *deployment.Spec.Template.DeepCopy(),
 			},
 		}
+
+		if err := ctrl.SetControllerReference(&deployment, newServerSet, r.Scheme); err != nil {
+			logger.Error(err, "failed to set owner reference on MinecraftServerSet", "MinecraftServerSet", newServerSet.Name)
+			return ctrl.Result{}, err
+		}
+
 		if err := r.Create(ctx, newServerSet); err != nil {
 			logger.Error(err, "failed to create MinecraftServerSet", "MinecraftServerSet", newServerSet.Name)
 			return ctrl.Result{}, err
@@ -131,7 +134,7 @@ func (r *MinecraftDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.
 		currentServerSet.Spec.Replicas = deployment.Spec.Replicas
 		if err := r.Update(ctx, currentServerSet); err != nil {
 			logger.Error(err, "failed to update MinecraftServerSet spec")
-			return ctrl.Result{}, err
+			return ctrl.Result{Requeue: true}, err
 		}
 	}
 
@@ -141,7 +144,7 @@ func (r *MinecraftDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.
 	deployment.Status.Ingame = currentServerSet.Status.Ingame
 	if err := r.Status().Update(ctx, &deployment); err != nil {
 		logger.Error(err, "failed to update MinecraftDeployment status")
-		return ctrl.Result{}, err
+		return ctrl.Result{Requeue: true}, err
 	}
 
 	return ctrl.Result{}, nil
