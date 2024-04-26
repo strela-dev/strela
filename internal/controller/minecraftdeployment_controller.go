@@ -21,8 +21,10 @@ import (
 	"fmt"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"reflect"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	streladevv1 "strela.dev/strela/api/v1"
@@ -33,6 +35,8 @@ type MinecraftDeploymentReconciler struct {
 	client.Client
 	Scheme *runtime.Scheme
 }
+
+const minecraftServerDeploymentFinalizer = "finalizer.strela.dev"
 
 //+kubebuilder:rbac:groups=strela.dev,resources=minecraftdeployments,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=strela.dev,resources=minecraftdeployments/status,verbs=get;update;patch
@@ -72,6 +76,11 @@ func (r *MinecraftDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.
 	if err != nil {
 		logger.Error(err, "unable to list MinecraftServerSets")
 		return ctrl.Result{}, err
+	}
+
+	res, err := r.handleFinalizer(ctx, &deployment, serverSets)
+	if err != nil || res != nil {
+		return *res, err
 	}
 
 	// Determine the current ServerSet and outdated ServerSets
@@ -134,20 +143,69 @@ func (r *MinecraftDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.
 		currentServerSet.Spec.Replicas = deployment.Spec.Replicas
 		if err := r.Update(ctx, currentServerSet); err != nil {
 			logger.Error(err, "failed to update MinecraftServerSet spec")
-			return ctrl.Result{Requeue: true}, err
+			return ctrl.Result{}, err
 		}
 	}
 
+	oldStatus := deployment.Status.DeepCopy()
 	// Update the MinecraftDeployment status
 	deployment.Status.Replicas = currentServerSet.Status.Replicas
 	deployment.Status.Ready = currentServerSet.Status.Ready
 	deployment.Status.Ingame = currentServerSet.Status.Ingame
-	if err := r.Status().Update(ctx, &deployment); err != nil {
-		logger.Error(err, "failed to update MinecraftDeployment status")
-		return ctrl.Result{Requeue: true}, err
+	if !reflect.DeepEqual(oldStatus, deployment.Status) {
+		if err := r.Status().Update(ctx, &deployment); err != nil {
+			logger.Error(err, "failed to update MinecraftDeployment status")
+			return ctrl.Result{}, err
+		}
 	}
 
 	return ctrl.Result{}, nil
+}
+
+func (r *MinecraftDeploymentReconciler) handleFinalizer(
+	ctx context.Context,
+	minecraftDeployment *streladevv1.MinecraftDeployment,
+	ownedServerSets []streladevv1.MinecraftServerSet,
+) (*ctrl.Result, error) {
+	if minecraftDeployment.ObjectMeta.DeletionTimestamp.IsZero() {
+		// The object is not being deleted, so if it does not have our finalizer,
+		// then lets add the finalizer and update the object. This is equivalent
+		// to registering our finalizer.
+		if !controllerutil.ContainsFinalizer(minecraftDeployment, minecraftServerDeploymentFinalizer) {
+			controllerutil.AddFinalizer(minecraftDeployment, minecraftServerDeploymentFinalizer)
+			if err := r.Update(ctx, minecraftDeployment); err != nil {
+				return &ctrl.Result{}, err
+			}
+		}
+	} else {
+		// The object is being deleted
+		if controllerutil.ContainsFinalizer(minecraftDeployment, minecraftServerDeploymentFinalizer) {
+			// our finalizer is present, so lets handle any external dependency
+
+			//delete all minecraftServerSets
+			for _, minecraftServerSet := range ownedServerSets {
+				if minecraftServerSet.ObjectMeta.DeletionTimestamp == nil {
+					if err := r.Delete(ctx, &minecraftServerSet); err != nil {
+						return &ctrl.Result{}, err
+					}
+				}
+			}
+
+			if len(ownedServerSets) > 0 {
+				return &ctrl.Result{}, nil
+			}
+
+			// remove our finalizer from the list and update it.
+			controllerutil.RemoveFinalizer(minecraftDeployment, minecraftServerSetFinalizer)
+			if err := r.Update(ctx, minecraftDeployment); err != nil {
+				return &ctrl.Result{}, err
+			}
+		}
+
+		// Stop reconciliation as the item is being deleted
+		return &ctrl.Result{}, nil
+	}
+	return nil, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
