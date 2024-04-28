@@ -81,6 +81,10 @@ func (r *MinecraftServerReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	if errPod == nil {
 		//Pod already exist
 
+		if currentPod.Status.Phase != corev1.PodRunning {
+			return ctrl.Result{}, nil
+		}
+
 		allContainersReady := true
 		for _, containerStatus := range currentPod.Status.ContainerStatuses {
 			if !containerStatus.Ready {
