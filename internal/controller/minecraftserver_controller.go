@@ -207,7 +207,7 @@ func createNewPodFromTemplate(ctx context.Context, r *MinecraftServerReconciler,
 	}
 
 	containers := make([]corev1.Container, 0, 1+len(pod.Spec.Containers))
-	containers = append(containers, createSideCarContainer(podName))
+	containers = append(containers, createSideCarContainer(minecraftServer.Spec.ConfigurationMode, podName))
 	containers = append(containers, pod.Spec.Containers...)
 	pod.Spec.Containers = containers
 
@@ -276,16 +276,18 @@ func createInitContainer(server *streladevv1.MinecraftServer, volumeName string)
 	return sidecar
 }
 
-func createSideCarContainer(podName string) corev1.Container {
+func createSideCarContainer(configurationMode streladevv1.ConfigurationMode, podName string) corev1.Container {
+	var envs []corev1.EnvVar
+	envs = append(envs, corev1.EnvVar{Name: "POD_NAME", Value: podName})
+
+	if configurationMode == streladevv1.Bungeecord || configurationMode == streladevv1.Velocity {
+		envs = append(envs, corev1.EnvVar{Name: "PROXY_PROTO", Value: "2"})
+	}
+
 	sidecar := corev1.Container{
-		Name:  "strela-sidecar",
-		Image: "ghcr.io/strela-dev/strela-sidecar:main",
-		Env: []corev1.EnvVar{
-			{
-				Name:  "POD_NAME",
-				Value: podName,
-			},
-		},
+		Name:            "strela-sidecar",
+		Image:           "ghcr.io/strela-dev/strela-sidecar:main",
+		Env:             envs,
 		ImagePullPolicy: corev1.PullAlways,
 	}
 	return sidecar
