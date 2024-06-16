@@ -76,9 +76,10 @@ func (r *MinecraftServerSetReconciler) Reconcile(ctx context.Context, req ctrl.R
 	}
 
 	minecraftServers := childMinecraftServers.Items
-	ingameCount := determineIngameServerCount(minecraftServers)
+	notIngameServers := determineNotIngameServers(minecraftServers)
+	notIngameCount := len(notIngameServers)
+	ingameCount := len(minecraftServers) - notIngameCount
 	readyCount := determineReadyServerCount(minecraftServers)
-	notIngameCount := len(minecraftServers) - ingameCount
 
 	if notIngameCount == minecraftServerSet.Spec.Replicas {
 		//update status
@@ -107,7 +108,7 @@ func (r *MinecraftServerSetReconciler) Reconcile(ctx context.Context, req ctrl.R
 	}
 
 	if notIngameCount > minecraftServerSet.Spec.Replicas {
-		serverToStop := minecraftServers[0]
+		serverToStop := notIngameServers[0]
 
 		if err := r.Delete(ctx, &serverToStop); err != nil {
 			logger.Error(err, "unable to delete Pod for MinecraftServer", "minecraftServer", serverToStop)
@@ -189,14 +190,14 @@ func createNewMinecraftServerFromTemplate(set streladevv1.MinecraftServerSet) *s
 	return server
 }
 
-func determineIngameServerCount(servers []streladevv1.MinecraftServer) int {
-	count := 0
+func determineNotIngameServers(servers []streladevv1.MinecraftServer) []streladevv1.MinecraftServer {
+	var notIngameServers []streladevv1.MinecraftServer
 	for _, server := range servers {
-		if server.Status.Ingame {
-			count++
+		if !server.Status.Ingame {
+			notIngameServers = append(notIngameServers, server)
 		}
 	}
-	return count
+	return notIngameServers
 }
 
 func determineReadyServerCount(servers []streladevv1.MinecraftServer) int {
