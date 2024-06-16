@@ -9,4 +9,19 @@ metadata:
     app.kubernetes.io/created-by: strela
   name: minecraftserver-sample
 spec:
-  # TODO(user): Add fields here
+  configDir: "/server"
+  configurationMode: "VELOCITY"
+  template:
+    spec:
+      containers:
+        - image: ghcr.io/strela-dev/docker-minecraft-proxy:main
+          imagePullPolicy: Always
+          name: proxy
+          tty: true
+          stdin: true
+          ports:
+            - containerPort: 25577
+              name: main
+          env:
+            - name: "TYPE"
+              value: "VELOCITY"

@@ -9,4 +9,25 @@ metadata:
     app.kubernetes.io/created-by: strela
   name: minecraftstatefulset-sample
 spec:
-  # TODO(user): Add fields here
+  replicas: 3
+  template:
+    spec:
+      template:
+        spec:
+          containers:
+            # We use our Docker image for a Minecraft server.
+            # You can use any other image, but make sure it's starting a Minecraft server.
+            - image: itzg/minecraft-server
+              imagePullPolicy: Always
+              name: server
+              tty: true
+              stdin: true
+              ports:
+                # This might be different for your image, but it's usually 25565 for Minecraft servers.
+                - containerPort: 25565
+                  name: main
+              env:
+                # Our image is based on itzg/bungeecord, so we use a variable to start a velocity server.
+                # If you use a different image, you might need to use a different variable.
+                - name: "EULA"
+                  value: "TRUE"

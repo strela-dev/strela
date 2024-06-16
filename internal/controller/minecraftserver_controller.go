@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -97,6 +98,7 @@ func (r *MinecraftServerReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 				return ctrl.Result{}, nil
 			}
 			minecraftServer.Status.Ready = true
+			minecraftServer.Status.ReadyTime = metav1.Now()
 			if err := r.Status().Update(ctx, &minecraftServer); err != nil {
 				log.Error(err, "unable to update status", minecraftServer)
 				return ctrl.Result{}, err

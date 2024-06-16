@@ -53,9 +53,10 @@ type MinecraftServerSpec struct {
 type MinecraftServerStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	Ingame      bool `json:"ingame,omitempty"`
-	Ready       bool `json:"ready,omitempty"`
-	PlayerCount int  `json:"playerCount,omitempty"`
+	Ingame      bool        `json:"ingame,omitempty"`
+	Ready       bool        `json:"ready,omitempty"`
+	PlayerCount int         `json:"playerCount,omitempty"`
+	ReadyTime   metav1.Time `json:"readyTime,omitempty"`
 }
 
 //+kubebuilder:object:root=true

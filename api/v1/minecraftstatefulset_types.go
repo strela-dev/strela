@@ -17,6 +17,7 @@ limitations under the License.
 package v1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -25,17 +26,26 @@ import (
 
 // MinecraftStatefulSetSpec defines the desired state of MinecraftStatefulSet
 type MinecraftStatefulSetSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	Replicas        int                         `json:"replicas,omitempty"`
+	MinReadySeconds int32                       `json:"minReadySeconds,omitempty"`
+	Template        MinecraftServerTemplateSpec `json:"template,omitempty"`
+	// +optional
+	VolumeClaimTemplates []SelfVolumeClaimSpec `json:"volumeClaimTemplates,omitempty"`
+}
 
-	// Foo is an example field of MinecraftStatefulSet. Edit minecraftstatefulset_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+type SelfVolumeClaimSpec struct {
+	Metadata SelfMetadata                     `json:"metadata,omitempty"`
+	Spec     corev1.PersistentVolumeClaimSpec `json:"spec,omitempty"`
+}
+
+type SelfMetadata struct {
+	Name string `json:"name,omitempty"`
 }
 
 // MinecraftStatefulSetStatus defines the observed state of MinecraftStatefulSet
 type MinecraftStatefulSetStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	Replicas int `json:"replicas,omitempty"`
+	Ready    int `json:"ready,omitempty"`
 }
 
 //+kubebuilder:object:root=true

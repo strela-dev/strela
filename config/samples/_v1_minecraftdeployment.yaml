@@ -9,12 +9,13 @@ metadata:
     app.kubernetes.io/created-by: strela
     cloud-group: minecraftdeployment-sample
   name: minecraftdeployment-sample
-  namespace: strela-system
 spec:
   replicas: 1
   type: PROXY
   template:
     spec:
+      configDir: "/server"
+      configurationMode: "VELOCITY"
       template:
         spec:
           containers:
