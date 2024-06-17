@@ -248,6 +248,11 @@ func findVolumeName(container *corev1.Container, configDir string) string {
 }
 
 func createInitContainer(server *streladevv1.MinecraftServer, volumeName string) corev1.Container {
+	configDir := server.Spec.ConfigDir
+	if configDir == "" {
+		configDir = "/data"
+	}
+
 	sidecar := corev1.Container{
 		Name:  "strela-init-container",
 		Image: "ghcr.io/strela-dev/minecraft-configurator:main",
@@ -264,12 +269,16 @@ func createInitContainer(server *streladevv1.MinecraftServer, volumeName string)
 				Name:  "FORWARDING_SECRET",
 				Value: "abcde",
 			},
+			{
+				Name:  "DATA_DIR",
+				Value: configDir,
+			},
 		},
 		ImagePullPolicy: corev1.PullAlways,
 		VolumeMounts: []corev1.VolumeMount{
 			{
 				Name:      volumeName,
-				MountPath: "/data",
+				MountPath: configDir,
 			},
 		},
 	}
