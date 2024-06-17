@@ -289,9 +289,9 @@ func createSideCarContainer(minecraftServerType streladevv1.MinecraftServerType,
 	var envs []corev1.EnvVar
 	envs = append(envs, corev1.EnvVar{Name: "POD_NAME", Value: podName})
 
-	if minecraftServerType == streladevv1.Proxy {
-		envs = append(envs, corev1.EnvVar{Name: "PROXY_PROTO", Value: "2"})
-	}
+	//if minecraftServerType == streladevv1.Proxy {
+	//	envs = append(envs, corev1.EnvVar{Name: "PROXY_PROTO", Value: "2"})
+	//}
 
 	sidecar := corev1.Container{
 		Name:            "strela-sidecar",
