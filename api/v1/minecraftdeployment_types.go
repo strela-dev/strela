@@ -27,13 +27,6 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
-type MinecraftDeploymentType string
-
-const (
-	Proxy  MinecraftDeploymentType = "PROXY"
-	Server MinecraftDeploymentType = "SERVER"
-)
-
 // MinecraftDeploymentSpec defines the desired state of MinecraftDeployment
 type MinecraftDeploymentSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
@@ -41,7 +34,6 @@ type MinecraftDeploymentSpec struct {
 
 	// Foo is an example field of MinecraftDeployment. Edit minecraftdeployment_types.go to remove/update
 	Replicas int                         `json:"replicas,omitempty"`
-	Type     MinecraftDeploymentType     `json:"type,omitempty"`
 	Template MinecraftServerTemplateSpec `json:"template,omitempty"`
 }
 

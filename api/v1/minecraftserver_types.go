@@ -33,6 +33,13 @@ const (
 	SpgiotBungeecord ConfigurationMode = "SPIGOT_BUNGEECORD"
 )
 
+type MinecraftServerType string
+
+const (
+	Proxy  MinecraftServerType = "PROXY"
+	Server MinecraftServerType = "SERVER"
+)
+
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
@@ -43,10 +50,11 @@ type MinecraftServerSpec struct {
 
 	// Foo is an example field of MinecraftServer. Edit minecraftserver_types.go to remove/update
 	Container         string                 `json:"container,omitempty"`
-	ConfigDir         string                 `json:"configDir,omitempty"`
-	Template          corev1.PodTemplateSpec `json:"template"`
+	Type              MinecraftServerType    `json:"serverType,omitempty"`
 	ConfigurationMode ConfigurationMode      `json:"configurationMode,omitempty"`
+	ConfigDir         string                 `json:"configDir,omitempty"`
 	MaxPlayers        int                    `json:"maxPlayers,omitempty"`
+	Template          corev1.PodTemplateSpec `json:"template"`
 }
 
 // MinecraftServerStatus defines the observed state of MinecraftServer
