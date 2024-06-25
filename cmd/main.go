@@ -33,8 +33,8 @@ import (
 	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	streladevv1 "strela.dev/strela/api/v1"
-	"strela.dev/strela/internal/controller"
+	streladevv1 "github.com/strela-dev/strela/api/v1"
+	"github.com/strela-dev/strela/internal/controller"
 	//+kubebuilder:scaffold:imports
 )
 

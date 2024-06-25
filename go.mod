@@ -1,4 +1,4 @@
-module strela.dev/strela
+module github.com/strela-dev/strela
 
 go 1.21
 

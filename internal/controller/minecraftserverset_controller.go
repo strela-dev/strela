@@ -25,7 +25,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	streladevv1 "strela.dev/strela/api/v1"
+	streladevv1 "github.com/strela-dev/strela/api/v1"
 )
 
 // MinecraftServerSetReconciler reconciles a MinecraftServerSet object

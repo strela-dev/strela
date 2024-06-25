@@ -31,7 +31,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	streladevv1 "strela.dev/strela/api/v1"
+	streladevv1 "github.com/strela-dev/strela/api/v1"
 	//+kubebuilder:scaffold:imports
 )
 

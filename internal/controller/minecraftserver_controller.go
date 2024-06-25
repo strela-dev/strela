@@ -31,8 +31,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"strconv"
 
+	streladevv1 "github.com/strela-dev/strela/api/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	streladevv1 "strela.dev/strela/api/v1"
 )
 
 const minecraftServerFinalizer = "finalizer.strela.dev"

@@ -31,7 +31,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
-	streladevv1 "strela.dev/strela/api/v1"
+	streladevv1 "github.com/strela-dev/strela/api/v1"
 )
 
 // MinecraftStatefulSetReconciler reconciles a MinecraftStatefulSet object
