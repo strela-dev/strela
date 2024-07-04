@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/strela-dev/strela/internal/util"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -201,7 +202,7 @@ func createNewPodFromTemplate(ctx context.Context, r *MinecraftServerReconciler,
 		configureInitContainer(pod, minecraftServerContainer, &minecraftServer)
 	}
 
-	serviceAccountName, err := r.findServiceAccountName(ctx)
+	serviceAccountName, err := r.findServiceAccountName(ctx, minecraftServer.Namespace)
 	if err == nil {
 		pod.Spec.ServiceAccountName = serviceAccountName
 	}
@@ -320,33 +321,18 @@ func findMinecraftServerContainer(server *streladevv1.MinecraftServer) (*corev1.
 	return nil, errors.New("'container' field was set but a container with the name was not found")
 }
 
-var stelaLaberls = map[string]string{
+var stelaLabels = map[string]string{
 	"app.kubernetes.io/part-of": "strela",
 }
 
-func (r *MinecraftServerReconciler) findServiceAccountName(ctx context.Context) (string, error) {
-	saList := &corev1.ServiceAccountList{}
-	listOpts := []client.ListOption{
-		client.MatchingLabels(stelaLaberls),
-	}
-
-	if err := r.Client.List(ctx, saList, listOpts...); err != nil {
-		return "", err
-	}
-
-	if len(saList.Items) == 0 {
-		return "", fmt.Errorf("no service accounts foudn matching label: %v", stelaLaberls)
-	}
-
-	fmt.Println("Found service account " + saList.Items[0].Name)
-
-	return saList.Items[0].Name, nil
+func (r *MinecraftServerReconciler) findServiceAccountName(ctx context.Context, namespace string) (string, error) {
+	return util.EnsureServiceAccount(r.Client, ctx, namespace)
 }
 
 func (r *MinecraftServerReconciler) findNamespaceName(ctx context.Context) (string, error) {
 	nList := &corev1.NamespaceList{}
 	listOpts := []client.ListOption{
-		client.MatchingLabels(stelaLaberls),
+		client.MatchingLabels(stelaLabels),
 	}
 
 	if err := r.Client.List(ctx, nList, listOpts...); err != nil {
@@ -354,7 +340,7 @@ func (r *MinecraftServerReconciler) findNamespaceName(ctx context.Context) (stri
 	}
 
 	if len(nList.Items) == 0 {
-		return "", fmt.Errorf("no service accounts foudn matching label: %v", stelaLaberls)
+		return "", fmt.Errorf("no service accounts foudn matching label: %v", stelaLabels)
 	}
 
 	return nList.Items[0].Name, nil
