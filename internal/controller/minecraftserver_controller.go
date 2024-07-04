@@ -19,7 +19,6 @@ package controller
 import (
 	"context"
 	"errors"
-	"fmt"
 	"github.com/strela-dev/strela/internal/util"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -321,29 +320,8 @@ func findMinecraftServerContainer(server *streladevv1.MinecraftServer) (*corev1.
 	return nil, errors.New("'container' field was set but a container with the name was not found")
 }
 
-var stelaLabels = map[string]string{
-	"app.kubernetes.io/part-of": "strela",
-}
-
 func (r *MinecraftServerReconciler) findServiceAccountName(ctx context.Context, namespace string) (string, error) {
 	return util.EnsureServiceAccount(r.Client, ctx, namespace)
-}
-
-func (r *MinecraftServerReconciler) findNamespaceName(ctx context.Context) (string, error) {
-	nList := &corev1.NamespaceList{}
-	listOpts := []client.ListOption{
-		client.MatchingLabels(stelaLabels),
-	}
-
-	if err := r.Client.List(ctx, nList, listOpts...); err != nil {
-		return "", err
-	}
-
-	if len(nList.Items) == 0 {
-		return "", fmt.Errorf("no service accounts foudn matching label: %v", stelaLabels)
-	}
-
-	return nList.Items[0].Name, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
