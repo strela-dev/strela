@@ -69,7 +69,12 @@ func (r *MinecraftDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.
 		logger.Error(err, "failed to generate PodTemplateSpec hash")
 		return ctrl.Result{}, err
 	}
-	hashedName := fmt.Sprintf("%s-%s", deployment.Name, podTemplateHash[:8])
+
+	// Log the PodTemplateSpec hash
+	logger.Info("PodTemplate", podTemplateHash)
+
+	// Use safeSubstring to avoid slice bounds out of range error
+	hashedName := fmt.Sprintf("%s-%s", deployment.Name, safeSubstring(podTemplateHash, 8))
 
 	// List all MinecraftServerSets owned by this MinecraftDeployment
 	serverSets, err := deployment.GetMinecraftSets(r.Client, ctx)
@@ -160,6 +165,13 @@ func (r *MinecraftDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.
 	}
 
 	return ctrl.Result{}, nil
+}
+
+func safeSubstring(s string, length int) string {
+	if len(s) < length {
+		return s
+	}
+	return s[:length]
 }
 
 func (r *MinecraftDeploymentReconciler) handleFinalizer(
