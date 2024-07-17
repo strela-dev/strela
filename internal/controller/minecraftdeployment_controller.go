@@ -71,7 +71,7 @@ func (r *MinecraftDeploymentReconciler) Reconcile(ctx context.Context, req ctrl.
 	}
 
 	// Log the PodTemplateSpec hash
-	logger.Info("PodTemplate", podTemplateHash)
+	logger.Info("PodTemplate " + podTemplateHash)
 
 	// Use safeSubstring to avoid slice bounds out of range error
 	hashedName := fmt.Sprintf("%s-%s", deployment.Name, safeSubstring(podTemplateHash, 8))
