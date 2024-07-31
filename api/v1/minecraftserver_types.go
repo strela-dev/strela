@@ -65,6 +65,8 @@ type MinecraftServerStatus struct {
 	Ready       bool        `json:"ready,omitempty"`
 	PlayerCount int         `json:"playerCount,omitempty"`
 	ReadyTime   metav1.Time `json:"readyTime,omitempty"`
+	IngameTime  metav1.Time `json:"ingameTime,omitempty"`
+	PodIP       string      `json:"podIP,omitempty"`
 }
 
 //+kubebuilder:object:root=true

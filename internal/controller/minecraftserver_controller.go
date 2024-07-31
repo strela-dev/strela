@@ -82,6 +82,15 @@ func (r *MinecraftServerReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	if errPod == nil {
 		//Pod already exist
 
+		if currentPod.Status.PodIP != minecraftServer.Status.PodIP {
+			minecraftServer.Status.PodIP = currentPod.Status.PodIP
+			if err := r.Status().Update(ctx, &minecraftServer); err != nil {
+				log.Error(err, "unable to update status", minecraftServer)
+				return ctrl.Result{}, err
+			}
+			return ctrl.Result{Requeue: true}, nil
+		}
+
 		if currentPod.Status.Phase != corev1.PodRunning {
 			return ctrl.Result{}, nil
 		}
