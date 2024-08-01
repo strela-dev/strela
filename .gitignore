@@ -27,3 +27,5 @@ Dockerfile.cross
 *.swp
 *.swo
 *~
+
+vendor
